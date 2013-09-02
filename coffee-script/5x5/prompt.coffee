@@ -20,7 +20,6 @@ strToCoordinates = (input) ->
   else
     console.log 'Inpust must be of the form `x, y`.'
 
-
 stdin = process.openStdin()
 stdin.setEncoding 'utf8'
 
