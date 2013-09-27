@@ -70,6 +70,7 @@ defmodule MyEnum do
     [head | flatten(tail)]
   end
 
+
 end
 
 IO.puts inspect(MyEnum.all?([1, 2, 3], &(&1 > 1)))
@@ -78,3 +79,36 @@ IO.puts inspect(MyEnum.filter([2, 1, 3], &(&1 > 1)))
 IO.puts inspect(MyEnum.split([2, 1, 3], 2))
 IO.puts inspect(MyEnum.take([2, 1, 3], 2))
 IO.puts inspect(MyEnum.flatten([ 1, [ 2, 3, [4] ], 5, [[[6]]]]))
+
+# Use your span function and list comprehensions to return a list of the prime numbers from 2 to n.
+IO.puts inspect( MyList.span(2, 10) -- (
+  lc x inlist MyList.span(2, 10), y inlist MyList.span(2,10), x <= y, do: x * y
+))
+
+tax_rates_org = [ NC: 0.075, TX: 0.08 ]
+orders_org = [
+         [ id: 123, ship_to: :NC, net_amount: 100.00 ],
+         [ id: 124, ship_to: :OK, net_amount:  35.50 ],
+         [ id: 125, ship_to: :TX, net_amount:  24.00 ],
+         [ id: 126, ship_to: :TX, net_amount:  44.80 ],
+         [ id: 127, ship_to: :NC, net_amount:  25.00 ],
+         [ id: 128, ship_to: :MA, net_amount:  10.00 ],
+         [ id: 129, ship_to: :CA, net_amount: 102.00 ],
+         [ id: 120, ship_to: :NC, net_amount:  50.00 ]
+]
+
+defmodule Order do
+  def calculate_total(_tax_rates, []), do: []
+  def calculate_total(tax_rates, [head | tail]) do
+    if head[:ship_to] in Dict.keys(tax_rates) do
+      [
+        Dict.put(head, :total_amount, (head[:net_amount] * (1.0 + tax_rates[head[:ship_to]]))) |
+        calculate_total(tax_rates, tail)
+      ]
+    else
+      [head | calculate_total(tax_rates, tail)]
+    end
+  end
+end
+
+IO.puts(inspect(Order.calculate_total(tax_rates_org, orders_org)))
