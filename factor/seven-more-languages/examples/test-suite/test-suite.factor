@@ -1,5 +1,5 @@
-USING: tools.test io io.streams.null kernel namespaces sequences ;
-USE: examples.strings
+USING: tools.test io io.streams.null kernel namespaces sequences examples.strings
+    examples.sequences ;
 IN: examples.test-suite
 
 : test-all-examples ( -- )
