@@ -1,7 +1,8 @@
 USING: vectors sequences kernel accessors math io prettyprint ;
 IN: examples.cart-items
+CONSTANT: vat 0.23
 TUPLE: cart-item name price quantity ;
-TUPLE: checkout item-count base-price taxes shipping total-price ;
+TUPLE: checkout item-count base-price taxes ;
 
 : <pricey-cart-item> ( price -- cart-item ) "default name" swap 1 cart-item boa ;
 : cart-item-count ( cart -- count ) [ quantity>> ] map sum ;
@@ -16,12 +17,21 @@ TUPLE: checkout item-count base-price taxes shipping total-price ;
 : sum ( seq -- n ) 0 [ + ] reduce ;
 
 : <base-checkout> ( item-count base-price -- checkout )
-    f f f checkout boa ;
+    f checkout boa ;
 
 : <checkout> ( cart -- checkout )
     [ cart-item-count ] [ cart-base-price ] bi <base-checkout> ;
 
+: with-vat ( price -- taxes ) vat * ;
+: no-vat ( price -- taxes ) drop 0.0 ;
 
-: test ( -- ) { 100.0 <pricey-cart-item> 50 <pricey-cart-item> } pprint flush ;
+: add-taxes ( checkout taxes-strategy -- taxed-checkout )
+    [ dup base-price>> ] dip call >>taxes ; inline
+
+: total ( checkout -- price )
+    [ with-vat ] add-taxes [ taxes>> ] [ base-price>> ] bi + ;
+
+: test ( -- ) { } 100.0 <pricey-cart-item> prefix 50 <pricey-cart-item> prefix
+    <checkout> total pprint flush ;
 
 MAIN: test
