@@ -1,24 +1,21 @@
--- START:part1
 module LanguageHead where
 
 import Keyboard
 import Mouse
 import Random
 import Text
--- END:part1
 
--- START:part2
-data State = Play | Pause | GameOver  -- (1)
+data State = Play | Pause | GameOver
 
 type Input = { space:Bool, x:Int, delta:Time, rand:Int }
 type Head = { x:Float, y:Float, vx:Float, vy:Float }
 type Player = { x:Float, score:Int }
 type Game = { state:State, heads:[Head], player:Player }
 
-defaultHead n = {x=100.0, y=75, vx=60, vy=0.0, img=headImage n }  -- (2)
+defaultHead n = {x = 100.0, y = 75, vx = 60, vy = 0.0, img = headImage n }
 defaultGame = { state   = Pause,
                 heads   = [],
-                player  = {x=0.0, score=0} }
+                player  = {x = 0.0, score = 0} }
 
 headImage n =
   if | n == 0 -> "/img/brucetate.png"
@@ -28,9 +25,7 @@ headImage n =
      | n == 4 -> "/img/josevalim.png"
      | otherwise -> ""
 bottom = 550
--- END:part2
 
--- START:part3
 secsPerFrame = 1.0 / 50.0
 delta = inSeconds <~ fps 50
 
@@ -42,16 +37,14 @@ input = sampleOn delta (Input <~ Keyboard.space
 main = lift display gameState
 
 gameState = foldp stepGame defaultGame input
--- END:part3
 
--- START:part4a
-stepGame input game =             -- (3)
+stepGame input game =
   case game.state of
     Play -> stepGamePlay input game
     Pause -> stepGamePaused input game
     GameOver -> stepGameFinished input game
 
-stepGamePlay {space, x, delta, rand} ({state, heads, player} as game) =  -- (4)
+stepGamePlay {space, x, delta, rand} ({state, heads, player} as game) =
   { game | state <-  stepGameOver x heads
          , heads <- stepHeads heads delta x player.score rand
          , player <- stepPlayer player x heads }
@@ -64,66 +57,58 @@ allHeadsSafe x heads =
 
 headSafe x head =
     head.y < bottom || abs (head.x - x) < 50
--- END:part4a
 
--- START:part4b
-stepHeads heads delta x score rand =    -- (5)
+stepHeads heads delta x score rand =
   spawnHead score heads rand
   |> bounceHeads
   |> removeComplete
   |> moveHeads delta
 
-spawnHead score heads rand =   -- (6)
+spawnHead score heads rand =
   let addHead = length heads < (score // 5000 + 1)
     && all (\head -> head.x > 107.0) heads in
   if addHead then defaultHead rand :: heads else heads
 
-bounceHeads heads = map bounce heads      -- (7)
+bounceHeads heads = map bounce heads
 
 bounce head =
   { head | vy <- if head.y > bottom && head.vy > 0
                  then -head.vy * 0.95
                  else head.vy }
 
-removeComplete heads = filter (\x -> not (complete x)) heads  -- (8)
+removeComplete heads = filter (\x -> not (complete x)) heads
 
 complete {x} = x > 750
 
-moveHeads delta heads = map moveHead heads     -- (9)
+moveHeads delta heads = map moveHead heads
 
 moveHead ({x, y, vx, vy} as head) =
   { head | x <- x + vx * secsPerFrame
          , y <- y + vy * secsPerFrame
          , vy <- vy + secsPerFrame * 400 }
 
--- END:part4b
 
--- START:part4c
-stepPlayer player mouseX heads =     -- (10)
+stepPlayer player mouseX heads =
   { player | score <- stepScore player heads
            , x <- toFloat mouseX }
 
-stepScore player heads =   -- (11)
+stepScore player heads =
   player.score +
   1 +
   1000 * (length (filter complete heads))
--- END:part4c
 
--- START:part4d
-stepGamePaused {space, x, delta} ({state, heads, player} as game) =    -- (12)
+stepGamePaused {space, x, delta} ({state, heads, player} as game) =
   { game | state <- stepState space state
          , player <- { player |  x <- toFloat x } }
 
-stepGameFinished {space, x, delta} ({state, heads, player} as game) =   -- (13)
+stepGameFinished {space, x, delta} ({state, heads, player} as game) =
   if space then defaultGame
   else { game | state <- GameOver
               , player <- { player |  x <- toFloat x } }
 
-stepState space state = if space then Play else state   -- (14)
--- END:part4d
+stepState space state = if space then Play else state
 
--- START:part5
-display ({state, heads, player} as game) =   -- (15)
+display ({state, heads, player} as game) =
   let (w, h) = (800, 600)
   in collage w h
        ([ drawRoad w h
@@ -133,7 +118,7 @@ display ({state, heads, player} as game) =   -- (15)
        , drawMessage w h state] ++
        (drawHeads w h heads))
 
-drawRoad w h =   -- (16)
+drawRoad w h =
   filled gray (rect (toFloat w) 100)
   |> moveY (-(half h) + 50)
 
@@ -141,7 +126,7 @@ drawBuilding w h =
   filled red (rect 100 (toFloat h))
   |> moveX (-(half w) + 50)
 
-drawHeads w h heads = map (drawHead w h) heads   -- (17)
+drawHeads w h heads = map (drawHead w h) heads
 
 drawHead w h head =
   let x = half w - head.x
@@ -158,7 +143,7 @@ drawPaddle w h x =   -- (18)
 
 half x = toFloat x / 2
 
-drawScore w h player =     -- (19)
+drawScore w h player =
   toForm (fullScore player)
   |> move (half w - 150, half h - 40)
 
@@ -166,10 +151,11 @@ fullScore player = txt (Text.height 50) (show player.score)
 
 txt f = leftAligned << f << monospace << Text.color blue << toText
 
-drawMessage w h state =    -- (20)
+drawMessage w h state =
   toForm (txt (Text.height 50) (stateMessage state))
   |> move (50, 50)
 
 stateMessage state =
-  if state == GameOver then "Game Over" else "Language Head"
--- END:part5
+  if | state == GameOver -> "Game Over"
+     | state == Play -> "LanguageHead"
+     | state == Pause -> "Press SPACE to play"
