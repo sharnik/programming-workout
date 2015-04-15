@@ -24,11 +24,10 @@ class ViewController: UIViewController {
         
         
         // creating and adding a collision behavior
-        // FIX: Collision Behaviour makes the image disappear :(
-//        let collisionBehavior =
-//            UICollisionBehavior(items: [self.imageView])
-//        collisionBehavior.translatesReferenceBoundsIntoBoundary = true
-//        dynamicAnimator.addBehavior(collisionBehavior)
+        let collisionBehavior =
+            UICollisionBehavior(items: [self.imageView])
+        collisionBehavior.translatesReferenceBoundsIntoBoundary = true
+        dynamicAnimator.addBehavior(collisionBehavior)
     }
 
 }
