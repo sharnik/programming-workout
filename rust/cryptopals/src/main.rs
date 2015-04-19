@@ -1,4 +1,5 @@
 mod helpers;
+mod set_1;
 
 #[test]
 fn test_set_1_challenge_2() {
