@@ -10,7 +10,6 @@ pub fn xor_against_single_char(string: Vec<u8>, xor_char: u8) -> Vec<u8> {
 
 fn scan_letter_frequency(string: Vec<u8>) -> [u16; 26] {
     let mut result : [u16; 26] = [0; 26];
-    for k in 0..25 { result[k] = 0 }
     for letter in string {
         println!("{}", letter);
         if letter >= 65 && letter <= 90 {
@@ -24,6 +23,31 @@ fn scan_letter_frequency(string: Vec<u8>) -> [u16; 26] {
 
     result
 }
+
+// Scores the string if it's close to natural frequency. The lower, the beter.
+fn score_string(occurence: [u16; 26], length: u16) -> u16 {
+    // This is expected (usual) frequency of particular letters in English phrases
+    let expected_frequency = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    let mut scores = [0; 26];
+    for idx in 0..25 {
+        let letter_score = occurence[idx] * 100 / length;
+        scores[idx] = expected_frequency[idx] - letter_score // TODO: absolute value of score
+    };
+
+    let mut final_score : u16= 0;
+    for score in scores.iter() { final_score += *score };
+
+    final_score
+}
+
+#[test]
+fn test_score_string() {
+    // Let's test "Foo bar"
+    let input = [1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0];
+    println!("{:?}", score_string(input, 7));
+
+}
+
 
 #[test]
 fn test_single_char_xor() {
