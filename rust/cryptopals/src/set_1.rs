@@ -1,19 +1,21 @@
 use helpers;
 use std::str::from_utf8;
 
-pub fn break_single_char_xor(string: &str ) -> Vec<u8> {
-    let byte_string = helpers::hex_to_byte_string(string.to_string());
-    let mut tmp_score : f32 = (byte_string.len() as f32) * 10.0;
+pub fn break_single_char_xor(strings: Vec<&str> ) -> Vec<u8> {
+    let mut tmp_score : f32 = 10_000_000.0;
     let mut tmp_result : Vec<u8> = "💩 ".to_string().into_bytes();
-    for k in 0..128 {
-        let result = xor_against_single_char(byte_string.clone(), k);
-        let length = result.len() as u16;
-        let result_score = score_string(scan_letter_frequency(result.clone()), length);
-        if result_score < tmp_score {
-            tmp_score = result_score.clone();
-            tmp_result = result.clone();
+    for string in strings {
+        let byte_string = helpers::hex_to_byte_string(string);
+        for k in 0..128 {
+            let result = xor_against_single_char(byte_string.clone(), k);
+            let length = result.len() as u16;
+            let result_score = score_string(scan_letter_frequency(result.clone()), length);
+            if result_score < tmp_score {
+                tmp_score = result_score.clone();
+                tmp_result = result.clone();
+            };
         };
-    }
+    };
     tmp_result
 }
 
@@ -23,6 +25,18 @@ fn xor_against_single_char(string: Vec<u8>, xor_char: u8) -> Vec<u8> {
         result.push(string[idx] ^ xor_char);
     };
     result
+}
+
+#[test]
+fn test_single_char_xor() {
+    let string = helpers::hex_to_byte_string("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
+    let xor_char : u8 = 88;
+    let result = match String::from_utf8(xor_against_single_char(string.clone(), xor_char)) {
+        Ok(v) => { v }
+        Err(_) => { panic!("Wrong utf conversion") }
+    };
+
+    assert!(result == "Cooking MC\'s like a pound of bacon".to_string());
 }
 
 // Scans the string and counts letter occurences
@@ -44,6 +58,13 @@ fn scan_letter_frequency(string: Vec<u8>) -> [u16; 28] {
     }
 
     result
+}
+
+#[test]
+fn test_scan_letter_frequency() {
+    assert!(scan_letter_frequency("Foo bar".to_string().into_bytes()) ==
+        [1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
+    )
 }
 
 // Scores the string if it's close to natural frequency. The lower, the beter.
@@ -72,23 +93,3 @@ fn test_score_string() {
     assert!(score_string(input, 7) == 144.737015);
 }
 
-
-#[test]
-fn test_single_char_xor() {
-    let string = helpers::hex_to_byte_string("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736".
-        to_string());
-    let xor_char : u8 = 88;
-    let result = match String::from_utf8(xor_against_single_char(string.clone(), xor_char)) {
-        Ok(v) => { v }
-        Err(_) => { panic!("Wrong utf conversion") }
-    };
-
-    assert!(result == "Cooking MC\'s like a pound of bacon".to_string());
-}
-
-#[test]
-fn test_scan_letter_frequency() {
-    assert!(scan_letter_frequency("Foo bar".to_string().into_bytes()) ==
-        [1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
-    )
-}
