@@ -13,9 +13,7 @@ pub fn break_single_char_xor(string: &str ) -> Vec<u8> {
             tmp_score = result_score.clone();
             tmp_result = result.clone();
         };
-        println!("k: {:?}, result: {:?}, score: {:?}", k, from_utf8(&result), result_score);
     }
-    println!("Final result: {:?}", from_utf8(&tmp_result));
     tmp_result
 }
 
@@ -28,15 +26,20 @@ fn xor_against_single_char(string: Vec<u8>, xor_char: u8) -> Vec<u8> {
 }
 
 // Scans the string and counts letter occurences
-fn scan_letter_frequency(string: Vec<u8>) -> [u16; 26] {
-    let mut result : [u16; 26] = [0; 26];
+// Returns an array of the form [a, b, c .. z, spaces, non-alphanumeric]
+fn scan_letter_frequency(string: Vec<u8>) -> [u16; 28] {
+    let mut result : [u16; 28] = [0; 28];
     for letter in string {
-        if letter >= 65 && letter <= 90 {
+        if letter == 32 {
+            result[26] += 1;
+        } else if letter >= 65 && letter <= 90 {
             let idx : u8 = letter - 65;
             result[idx as usize] += 1;
         } else if letter >= 97 && letter <= 122 {
             let idx : u8 = letter - 97;
             result[idx as usize] = result[idx as usize ] + 1;
+        } else {
+            result[27] += 1;
         };
     }
 
@@ -44,13 +47,13 @@ fn scan_letter_frequency(string: Vec<u8>) -> [u16; 26] {
 }
 
 // Scores the string if it's close to natural frequency. The lower, the beter.
-fn score_string(occurence: [u16; 26], length: u16) -> f32 {
+fn score_string(occurence: [u16; 28], length: u16) -> f32 {
     // This is expected (usual) frequency of particular letters in English phrases
     let expected_frequency = [8.167, 1.492, 2.782, 4.253, 12.702, 2.228, 2.015, 6.094, 6.966, 0.153,
         0.772, 4.025, 2.406, 6.749, 7.507, 1.929, 0.095, 5.987, 6.327, 9.056, 2.758, 0.978, 2.360,
-        0.150, 1.974, 0.074];
-    let mut scores = [0.0; 26];
-    for idx in 0..26 {
+        0.150, 1.974, 0.074, 13.0, 8.5];
+    let mut scores = [0.0; 28];
+    for idx in 0..28 {
         let letter_score : f32 = (occurence[idx] as f32) * 100.0 / (length as f32);
         scores[idx] = (expected_frequency[idx] - letter_score).abs();
     };
@@ -64,8 +67,9 @@ fn score_string(occurence: [u16; 26], length: u16) -> f32 {
 #[test]
 fn test_score_string() {
     // Let's test "Foo bar"
-    let input = [1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0];
-    assert!(score_string(input, 7) == 134.951294);
+    let input = [1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        0 ];
+    assert!(score_string(input, 7) == 144.737015);
 }
 
 
@@ -85,6 +89,6 @@ fn test_single_char_xor() {
 #[test]
 fn test_scan_letter_frequency() {
     assert!(scan_letter_frequency("Foo bar".to_string().into_bytes()) ==
-        [1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+        [1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
     )
 }
