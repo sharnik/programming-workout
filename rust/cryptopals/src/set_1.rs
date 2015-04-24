@@ -1,6 +1,25 @@
 use helpers;
+use std::str::from_utf8;
 
-pub fn xor_against_single_char(string: Vec<u8>, xor_char: u8) -> Vec<u8> {
+pub fn break_single_char_xor(string: &str ) -> Vec<u8> {
+    let byte_string = helpers::hex_to_byte_string(string.to_string());
+    let mut tmp_score : f32 = (byte_string.len() as f32) * 10.0;
+    let mut tmp_result : Vec<u8> = "💩 ".to_string().into_bytes();
+    for k in 0..128 {
+        let result = xor_against_single_char(byte_string.clone(), k);
+        let length = result.len() as u16;
+        let result_score = score_string(scan_letter_frequency(result.clone()), length);
+        if result_score < tmp_score {
+            tmp_score = result_score.clone();
+            tmp_result = result.clone();
+        };
+        println!("k: {:?}, result: {:?}, score: {:?}", k, from_utf8(&result), result_score);
+    }
+    println!("Final result: {:?}", from_utf8(&tmp_result));
+    tmp_result
+}
+
+fn xor_against_single_char(string: Vec<u8>, xor_char: u8) -> Vec<u8> {
     let mut result : Vec<u8> = vec![];
     for idx in 0..string.len() {
         result.push(string[idx] ^ xor_char);
