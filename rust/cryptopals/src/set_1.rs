@@ -1,5 +1,8 @@
+extern crate rustc_serialize;
+
 use helpers;
 use std::str::from_utf8;
+use self::rustc_serialize::hex::ToHex;
 
 pub fn break_single_char_xor(strings: Vec<&str> ) -> Vec<u8> {
     let mut tmp_score : f32 = 10_000_000.0;
@@ -17,6 +20,17 @@ pub fn break_single_char_xor(strings: Vec<&str> ) -> Vec<u8> {
         };
     };
     tmp_result
+}
+
+pub fn repeating_key_xor(string: &str, key: &str) -> String {
+    let byte_key = key.to_string().into_bytes();
+    let byte_string = string.to_string().into_bytes();
+    let mut result : Vec<u8> = vec![];
+
+    for idx in 0..string.len() {
+        result.push(byte_string[idx] ^ byte_key[idx % byte_key.len()]);
+    }
+    result.to_hex()
 }
 
 fn xor_against_single_char(string: Vec<u8>, xor_char: u8) -> Vec<u8> {
