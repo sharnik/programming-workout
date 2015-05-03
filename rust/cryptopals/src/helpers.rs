@@ -3,6 +3,7 @@ extern crate rustc_serialize;
 use self::rustc_serialize::hex::FromHex;
 use self::rustc_serialize::base64::{ToBase64, STANDARD, Config};
 
+#[allow(dead_code)] // debugging
 pub fn pretty_print(string: Vec<u8>) -> String {
     match String::from_utf8(string) {
         Ok(v) => { v }
