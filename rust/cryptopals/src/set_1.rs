@@ -4,6 +4,35 @@ use helpers;
 use std::str::from_utf8;
 use self::rustc_serialize::hex::ToHex;
 
+fn hamming_distance(string_a: &str, string_b: &str) -> u16 {
+    let mut counter : u16 = 0;
+    let byte_string_a : Vec<u8> = string_a.to_string().into_bytes();
+    let byte_string_b : Vec<u8> = string_b.to_string().into_bytes();
+
+    for idx in 0..byte_string_a.len() {
+        let mut number_a = byte_string_a[idx];
+        let mut number_b = byte_string_b[idx];
+
+        let mut times = 8;
+        while times > 0 {
+            if number_a % 2 != number_b % 2 {
+                counter += 1
+            };
+
+            number_a = number_a / 2;
+            number_b = number_b / 2;
+
+            times -= 1
+        }
+    }
+    counter
+}
+
+#[test]
+fn test_hamming_distance() {
+    assert!(hamming_distance("this is a test", "wokka wokka!!!") == 37);
+}
+
 pub fn break_single_char_xor(strings: Vec<&str> ) -> Vec<u8> {
     let mut tmp_score : f32 = 10_000_000.0;
     let mut tmp_result : Vec<u8> = "💩 ".to_string().into_bytes();
