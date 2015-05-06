@@ -10,21 +10,10 @@ fn hamming_distance(string_a: &str, string_b: &str) -> u16 {
     let byte_string_b : Vec<u8> = string_b.to_string().into_bytes();
 
     for idx in 0..byte_string_a.len() {
-        let mut number_a = byte_string_a[idx];
-        let mut number_b = byte_string_b[idx];
-
-        let mut times = 8;
-        while times > 0 {
-            if number_a % 2 != number_b % 2 {
-                counter += 1
-            };
-
-            number_a = number_a / 2;
-            number_b = number_b / 2;
-
-            times -= 1
-        }
+        let diff_count = (byte_string_a[idx] ^ byte_string_b[idx]).count_ones();
+        counter = counter + (diff_count as u16);
     }
+
     counter
 }
 
