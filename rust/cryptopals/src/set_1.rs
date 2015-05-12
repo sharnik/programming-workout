@@ -4,14 +4,38 @@ use helpers;
 use std::str::from_utf8;
 use self::rustc_serialize::hex::ToHex;
 
-fn hamming_distance(string_a: &str, string_b: &str) -> u16 {
-    let mut counter : u16 = 0;
+pub fn break_repeating_key_xor(string: &str) -> String {
+    let char_vector = string.as_bytes();
+    let mut guessed_distance = u32::max_value();
+    let mut guessed_keysize : u32 = 1;
+
+    // Guess the KEYSIZE
+    for keysize in 2..40 {
+        let mut byte_chunks = char_vector.chunks(keysize);
+        if byte_chunks.len() < 2 { continue; }
+
+        let first_chunk = from_utf8(byte_chunks.next().unwrap()).unwrap();
+        let second_chunk = from_utf8(byte_chunks.next().unwrap()).unwrap();
+        if first_chunk.len() != second_chunk.len() { continue; }
+
+        let distance = hamming_distance(first_chunk, second_chunk);
+        if (distance / (keysize as u32)) < (guessed_distance / guessed_keysize) {
+            guessed_keysize = distance;
+            guessed_distance = keysize as u32;
+        }
+    }
+    println!("Final keysize: {:?}", guessed_keysize);
+    "dupa".to_string()
+}
+
+fn hamming_distance(string_a: &str, string_b: &str) -> u32 {
+    let mut counter : u32 = 0;
     let byte_string_a : Vec<u8> = string_a.to_string().into_bytes();
     let byte_string_b : Vec<u8> = string_b.to_string().into_bytes();
 
     for idx in 0..byte_string_a.len() {
         let diff_count = (byte_string_a[idx] ^ byte_string_b[idx]).count_ones();
-        counter = counter + (diff_count as u16);
+        counter += diff_count as u32;
     }
 
     counter
