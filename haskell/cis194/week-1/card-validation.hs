@@ -9,4 +9,13 @@ toDigits int
 toDigitsRev :: Integer -> [Integer]
 toDigitsRev int = reverse (toDigits int)
 
-main = print (toDigitsRev 1343)
+doubleEveryOther :: [Integer] -> [Integer]
+doubleEveryOther [] = []
+doubleEveryOther [x] = [x]
+doubleEveryOther (list) =
+  let not_changed = last list in
+  let changed = list !! (length list - 2) in
+  let shortened_list = take (length list - 2) list in
+  doubleEveryOther shortened_list ++ [changed * 2] ++ [not_changed]
+
+main = print (doubleEveryOther (toDigits 123))
