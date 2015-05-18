@@ -24,4 +24,9 @@ sumDigits (x:xs)
   | x < 10 = x + (sumDigits xs)
   | otherwise = (mod x 10) + sumDigits ([(quot x 10)] ++ xs)
 
-main = print (sumDigits [16, 7, 12, 5])
+validate :: Integer -> Bool
+validate number =
+ let sum = sumDigits (doubleEveryOther (toDigits number)) in
+ (mod sum 10) == 0
+
+main = print (validate 4012888888881882)
