@@ -18,4 +18,10 @@ doubleEveryOther (list) =
   let shortened_list = take (length list - 2) list in
   doubleEveryOther shortened_list ++ [changed * 2] ++ [not_changed]
 
-main = print (doubleEveryOther (toDigits 123))
+sumDigits :: [Integer] -> Integer
+sumDigits [] = 0
+sumDigits (x:xs)
+  | x < 10 = x + (sumDigits xs)
+  | otherwise = (mod x 10) + sumDigits ([(quot x 10)] ++ xs)
+
+main = print (sumDigits [16, 7, 12, 5])
