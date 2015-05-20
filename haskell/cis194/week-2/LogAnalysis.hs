@@ -35,3 +35,10 @@ inOrder :: MessageTree -> [LogMessage]
 inOrder Leaf = []
 inOrder (Node left msg right) = (inOrder left) ++ msg:(inOrder right)
 
+whatWentWrong :: [LogMessage] -> [String]
+whatWentWrong [] = []
+whatWentWrong ((LogMessage (Error severity) _ msg):msgs)
+  | severity > 50 = (msg:(whatWentWrong msgs))
+  | otherwise = (whatWentWrong msgs)
+whatWentWrong (_:msgs) = whatWentWrong msgs
+
