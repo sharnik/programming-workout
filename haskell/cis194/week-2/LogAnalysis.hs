@@ -23,10 +23,15 @@ parse string =
 insert :: LogMessage -> MessageTree -> MessageTree
 insert (Unknown _) tree = tree
 insert msg Leaf = Node Leaf msg Leaf
-insert msg@(LogMessage _ new_timestamp _) tree@(Node left_tree (LogMessage _ tree_timestamp _) right_tree)
+insert msg@(LogMessage _ new_timestamp _)
+  (Node left_tree (LogMessage _ tree_timestamp _) right_tree)
   | new_timestamp < tree_timestamp = insert msg left_tree
   | new_timestamp > tree_timestamp = insert msg right_tree
 
 build :: [LogMessage] -> MessageTree
 build msgs = foldr insert Leaf msgs
+
+inOrder :: MessageTree -> [LogMessage]
+inOrder Leaf = []
+inOrder (Node left msg right) = (inOrder left) ++ msg:(inOrder right)
 
