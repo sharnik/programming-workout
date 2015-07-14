@@ -1,5 +1,6 @@
 module Calc where
     import ExprT
+    import Parser
 
     class Evaluable e where
         evaluate :: e -> Integer
@@ -11,3 +12,11 @@ module Calc where
 
     eval :: ExprT -> Integer
     eval x = evaluate x
+
+    evalStr :: String -> Maybe Integer
+    evalStr s =
+        let e = parseExp Lit Add Mul s
+        in case e of
+            Nothing -> Nothing
+            Just x -> Just (eval x)
+
