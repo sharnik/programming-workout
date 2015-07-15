@@ -5,10 +5,20 @@ module Calc where
     class Evaluable e where
         evaluate :: e -> Integer
 
+    class Expr d where
+        lit :: Integer -> d
+        add :: d -> d -> d
+        mul :: d -> d -> d
+
     instance Evaluable ExprT where
         evaluate (Lit x) = x
         evaluate (Add x y) = (evaluate x) + (evaluate y)
         evaluate (Mul x y) = (evaluate x) * (evaluate y)
+
+    instance Expr ExprT where
+        lit x = Lit x
+        add x y = (Add x y)
+        mul x y = (Mul x y)
 
     eval :: ExprT -> Integer
     eval x = evaluate x
