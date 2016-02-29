@@ -1,0 +1,47 @@
+name:                cis194-course
+version:             0.1.0.0
+synopsis:            Initial project template from stack
+description:         Please see README.md
+homepage:            http://github.com/githubuser/cis194-course#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Author name here
+maintainer:          example@example.com
+copyright:           2016 Author Here
+category:            Web
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+                     , src/week-1
+                     , src/week-2
+                     , src/week-3
+                     , src/week-4
+                     , src/week-5
+  exposed-modules:     Lib
+                     , CardValidation
+  build-depends:       base >= 4.7 && < 5
+  default-language:    Haskell2010
+
+executable cis194-course-exe
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , cis194-course
+  default-language:    Haskell2010
+
+test-suite cis194-course-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , cis194-course
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/githubuser/cis194-course

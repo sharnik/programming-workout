@@ -2,6 +2,8 @@
 
 -- Exercise 1, wholemeal programming
 
+module Single where
+
 fun1 :: [Integer] -> Integer
 fun1 =  foldr (*) 1 . map (\x -> x - 2) . filter (\x -> (mod x 2) == 0)
 
@@ -32,4 +34,4 @@ sieveSundaram =
     in filter (\x -> (not (x `elem` removables))) [1..n]
   )
 
-main = print (map' (\x -> x + 2) [1, 2, 3])
+-- main = print (map' (\x -> x + 2) [1, 2, 3])
