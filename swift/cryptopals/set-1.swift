@@ -43,6 +43,14 @@ extension Data {
   }
 }
 
+extension String {
+
+  // Array of typical letter frequency in English (A-Z)
+  let frequencyTable = [8.167, 1.492, 2.782, 4.253, 12.702, 2.228, 2.015, 6.094, 6.966, 0.153, 0.772, 4.025, 2.406, 6.749, 7.507, 1.929, 0.095, 5.987, 6.327, 9.056, 2.758, 0.978, 2.360, 0.150, 1.974, 0.074, 13.0, 8.5]
+
+  func scoreFrequency(stringFrequency: [Float])
+}
+
 // Exercise #1
 // let bytes = Data(hexString: "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")!
 // print(bytes.base64String())
