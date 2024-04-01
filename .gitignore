@@ -1,4 +1,5 @@
 elm/seven-more-languages/build/
 elm/seven-more-languages/cache/
 
+zig-cache
 .stack-work
