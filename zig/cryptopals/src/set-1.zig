@@ -1,4 +1,5 @@
 const std = @import("std");
+const Zigstr = @import("zigstr");
 
 pub fn loadHex(str: []const u8, output: []u8) void {
     var n: u32 = 0;
@@ -40,6 +41,79 @@ pub fn xorStrings(input: []const u8, key: []const u8, output: []u8) void {
     while (n < input.len) : (n += 1) output[n] = input[n] ^ key[n];
 }
 
+// Returns a probability text is real
+// Lower the better, it shows how far is the string from typical letter frequencies
+pub fn scoreText(text: []const u8) u8 {
+    var score: f16 = 0;
+    var decoded = try Zigstr.fromConstBytes(std.testing.allocator, text);
+    defer decoded.deinit();
+
+    // We downcase all letters and only check frequency of a-z
+    _ = decoded.toLower() catch unreachable;
+    const charAsciiOffset: u8 = 97;
+    const expectedFrequency = [_]f16{ 8.167, 1.492, 2.782, 4.253, 12.702, 2.228, 2.015, 6.094, 6.966, 0.153, 0.772, 4.025, 2.406, 6.749, 7.507, 1.929, 0.095, 5.987, 6.327, 9.056, 2.758, 0.978, 2.360, 0.150, 1.974, 0.074, 13.0, 8.5 };
+
+    var currentChar: u8 = 0;
+    while (currentChar <= 25) : (currentChar += 1) {
+        const actualFrequency: f16 = @as(f16, @floatFromInt(decoded.count(&[_]u8{currentChar + charAsciiOffset}))) * 100.0 / @as(f16, @floatFromInt(text.len));
+        score += @fabs(actualFrequency - expectedFrequency[currentChar]);
+    }
+
+    // Space frequency
+    const actualFrequency: f16 = @as(f16, @floatFromInt(decoded.count(" "))) * 100.0 / @as(f16, @floatFromInt(text.len));
+    score += @fabs(actualFrequency - expectedFrequency[26]);
+
+    return @intFromFloat(score);
+}
+
+test "scoring gibberish" {
+    const gibberish1 = "Ammikle\"OA%q\"nkig\"c\"rmwlf\"md\"`caml";
+    try std.testing.expectEqual(scoreText(gibberish1), 98);
+
+    const gibberish2 = "Ieeacdm*GI-y*fcao*k*zedn*el*hkied";
+    try std.testing.expectEqual(scoreText(gibberish2), 83);
+
+    const wordsOfWisdom = "Cooking MC's like a pound of bacon";
+    try std.testing.expectEqual(scoreText(wordsOfWisdom), 75);
+}
+
+pub fn findSingleCharKey(encrypted: []const u8) u8 {
+    var key: u8 = 0;
+    var index: usize = 0;
+    const LAST_KEY_INDEX = 127;
+
+    var decrypted = std.testing.allocator.alloc(u8, encrypted.len) catch unreachable;
+    defer std.testing.allocator.free(decrypted);
+
+    var realnessScores = std.testing.allocator.alloc(u8, LAST_KEY_INDEX) catch unreachable;
+    defer std.testing.allocator.free(realnessScores);
+
+    while (key < LAST_KEY_INDEX) : (key += 1) {
+        index = 0;
+        while (index < encrypted.len) : (index += 1) {
+            decrypted[index] = encrypted[index] ^ key;
+        }
+        realnessScores[key] = scoreText(decrypted[0..]);
+        // if (realnessScores[key] < 100) std.debug.print("Score results is {d}, key: {d}, decrypted string: {s}\n", .{ realnessScores[key], key, decrypted });
+    }
+
+    var bestKeyCandidate: u8 = 0;
+    var k: u8 = 0;
+    while (k < LAST_KEY_INDEX) : (k += 1) {
+        if (realnessScores[k] < realnessScores[bestKeyCandidate]) bestKeyCandidate = k;
+    }
+    return bestKeyCandidate;
+}
+
+test "finding a single character key" {
+    const encryptedHex = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
+    var encrypted = try std.testing.allocator.alloc(u8, encryptedHex.len / 2);
+    defer std.testing.allocator.free(encrypted);
+    loadHex(encryptedHex, encrypted);
+
+    try std.testing.expectEqual(findSingleCharKey(encrypted), 'X');
+}
+
 test "XOR encryption" {
     const encryptedHex = "1c0111001f010100061a024b53535009181c";
     var encrypted = try std.testing.allocator.alloc(u8, encryptedHex.len / 2);
@@ -55,14 +129,15 @@ test "XOR encryption" {
     defer std.testing.allocator.free(decrypted);
     xorStrings(encrypted, key, decrypted);
 
-    std.debug.print("Decrypted: {s}.\n", .{decrypted});
+    try std.testing.expectEqualStrings("the kid don't play", decrypted);
+    // std.debug.print("Decrypted: {s}.\n", .{decrypted});
 }
 
 // AUTO GENERATED
 
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+    std.debug.print("All MINE {s} are belong to us.\n", .{"codebase"});
 
     // stdout is for the actual output of your application, for example if you
     // are implementing gzip, then only the compressed bytes should be sent to
@@ -74,11 +149,4 @@ pub fn main() !void {
     try stdout.print("Run `zig build test` to run the tests.\n", .{});
 
     try bw.flush(); // don't forget to flush!
-}
-
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
 }

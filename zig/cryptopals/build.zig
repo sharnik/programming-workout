@@ -19,10 +19,18 @@ pub fn build(b: *std.Build) void {
         .name = "cryptopals",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = .{ .path = "src/set-1.zig" },
         .target = target,
         .optimize = optimize,
     });
+
+    const zigstr = b.dependency("zigstr", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
+    // exe, lib, tests, etc.
+    exe.addModule("zigstr", zigstr.module("zigstr"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
@@ -55,10 +63,11 @@ pub fn build(b: *std.Build) void {
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
     const unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = .{ .path = "src/set-1.zig" },
         .target = target,
         .optimize = optimize,
     });
+    unit_tests.addModule("zigstr", zigstr.module("zigstr"));
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
 

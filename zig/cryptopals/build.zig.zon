@@ -1,0 +1,11 @@
+// because zon file is really just a zig struct
+// comments are really done in the same way using 2 forward slashes
+.{
+    // the name of your project
+    .name = "my-cryptopals-project",
+    // the version of your project
+    .version = "0.0.1",
+    .dependencies = .{
+        .zigstr = .{ .url = "https://codeberg.org/dude_the_builder/zigstr/archive/v0.11.2.tar.gz", .hash = "12208129a4af2c2954a9d2049072fe98e35763c7e8a33aa34e3204caa5fa792f8b5f" },
+    },
+}
