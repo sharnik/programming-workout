@@ -41,26 +41,36 @@ pub fn xorStrings(input: []const u8, key: []const u8, output: []u8) void {
     while (n < input.len) : (n += 1) output[n] = input[n] ^ key[n];
 }
 
+pub fn countChar(text: []const u8, char: u8, checkUpcase: bool) u8 {
+    var count: u8 = 0;
+    var index: usize = 0;
+    while (index < text.len) : (index += 1) {
+        if (text[index] == char or (checkUpcase and text[index] == char - 32)) count += 1;
+    }
+
+    return count;
+}
+
 // Returns a probability text is real
 // Lower the better, it shows how far is the string from typical letter frequencies
 pub fn scoreText(text: []const u8) u8 {
     var score: f16 = 0;
-    var decoded = try Zigstr.fromConstBytes(std.testing.allocator, text);
-    defer decoded.deinit();
 
-    // We downcase all letters and only check frequency of a-z
-    _ = decoded.toLower() catch unreachable;
+    // // We lower case the string to only care about a-z
+    // const lowerCase = std.ascii.allocLowerString(std.testing.allocator, text) catch return 255;
+    // std.testing.allocator.free(lowerCase);
+
     const charAsciiOffset: u8 = 97;
     const expectedFrequency = [_]f16{ 8.167, 1.492, 2.782, 4.253, 12.702, 2.228, 2.015, 6.094, 6.966, 0.153, 0.772, 4.025, 2.406, 6.749, 7.507, 1.929, 0.095, 5.987, 6.327, 9.056, 2.758, 0.978, 2.360, 0.150, 1.974, 0.074, 13.0, 8.5 };
 
     var currentChar: u8 = 0;
     while (currentChar <= 25) : (currentChar += 1) {
-        const actualFrequency: f16 = @as(f16, @floatFromInt(decoded.count(&[_]u8{currentChar + charAsciiOffset}))) * 100.0 / @as(f16, @floatFromInt(text.len));
+        const actualFrequency: f16 = @as(f16, @floatFromInt(countChar(text, currentChar + charAsciiOffset, true))) * 100.0 / @as(f16, @floatFromInt(text.len));
         score += @fabs(actualFrequency - expectedFrequency[currentChar]);
     }
 
     // Space frequency
-    const actualFrequency: f16 = @as(f16, @floatFromInt(decoded.count(" "))) * 100.0 / @as(f16, @floatFromInt(text.len));
+    const actualFrequency: f16 = @as(f16, @floatFromInt(countChar(text, ' ', false))) * 100.0 / @as(f16, @floatFromInt(text.len));
     score += @fabs(actualFrequency - expectedFrequency[26]);
 
     return @intFromFloat(score);
@@ -77,32 +87,31 @@ test "scoring gibberish" {
     try std.testing.expectEqual(scoreText(wordsOfWisdom), 75);
 }
 
-pub fn findSingleCharKey(encrypted: []const u8) u8 {
+const DecryptCandidate = struct { key: u8, score: u8, decrypted: []u8 };
+
+pub fn findSingleCharKey(encrypted: []const u8, candidate: *DecryptCandidate) void {
     var key: u8 = 0;
     var index: usize = 0;
+    var score: u8 = 0;
     const LAST_KEY_INDEX = 127;
 
     var decrypted = std.testing.allocator.alloc(u8, encrypted.len) catch unreachable;
     defer std.testing.allocator.free(decrypted);
-
-    var realnessScores = std.testing.allocator.alloc(u8, LAST_KEY_INDEX) catch unreachable;
-    defer std.testing.allocator.free(realnessScores);
 
     while (key < LAST_KEY_INDEX) : (key += 1) {
         index = 0;
         while (index < encrypted.len) : (index += 1) {
             decrypted[index] = encrypted[index] ^ key;
         }
-        realnessScores[key] = scoreText(decrypted[0..]);
-        // if (realnessScores[key] < 100) std.debug.print("Score results is {d}, key: {d}, decrypted string: {s}\n", .{ realnessScores[key], key, decrypted });
-    }
+        score = scoreText(decrypted[0..]);
 
-    var bestKeyCandidate: u8 = 0;
-    var k: u8 = 0;
-    while (k < LAST_KEY_INDEX) : (k += 1) {
-        if (realnessScores[k] < realnessScores[bestKeyCandidate]) bestKeyCandidate = k;
+        if (score < candidate.score) {
+            candidate.key = key;
+            candidate.score = score;
+
+            std.mem.copy(comptime u8, candidate.decrypted, decrypted);
+        }
     }
-    return bestKeyCandidate;
 }
 
 test "finding a single character key" {
@@ -111,7 +120,13 @@ test "finding a single character key" {
     defer std.testing.allocator.free(encrypted);
     loadHex(encryptedHex, encrypted);
 
-    try std.testing.expectEqual(findSingleCharKey(encrypted), 'X');
+    var candidateDecrypted = std.testing.allocator.alloc(u8, encrypted.len) catch unreachable;
+    defer std.testing.allocator.free(candidateDecrypted);
+    var candidate = DecryptCandidate{ .key = 0, .score = 255, .decrypted = candidateDecrypted };
+
+    _ = findSingleCharKey(encrypted, &candidate);
+    // std.debug.print(("decrypted best string: {s}\n"), .{candidate.decrypted});
+    try std.testing.expectEqual(candidate.key, 'X');
 }
 
 test "XOR encryption" {
@@ -131,6 +146,34 @@ test "XOR encryption" {
 
     try std.testing.expectEqualStrings("the kid don't play", decrypted);
     // std.debug.print("Decrypted: {s}.\n", .{decrypted});
+}
+
+test "Set 1, problem 4: finding encrypted text in a file" {
+    var file = try std.fs.cwd().openFile("src/assets/set-1-problem-4.txt", .{});
+    defer file.close();
+
+    const contents = try file.reader().readAllAlloc(
+        std.testing.allocator,
+        100000,
+    );
+    defer std.testing.allocator.free(contents);
+
+    var candidateDecrypted = std.testing.allocator.alloc(u8, 30) catch unreachable;
+    defer std.testing.allocator.free(candidateDecrypted);
+    var candidate = DecryptCandidate{ .key = 0, .score = 255, .decrypted = candidateDecrypted };
+
+    var encryptedInput = try std.testing.allocator.alloc(u8, 30);
+    defer std.testing.allocator.free(encryptedInput);
+
+    var lines = std.mem.split(u8, contents, "\n");
+    while (lines.next()) |line| {
+        _ = loadHex(line, encryptedInput);
+        _ = findSingleCharKey(encryptedInput, &candidate);
+
+        if (candidate.score < 55) std.debug.print("Found key: {d} that decrypts: {s}\n", .{ candidate.key, candidate.decrypted });
+        // candidate.score = 255;
+    }
+    try std.testing.expectEqualStrings("Now that the party is jumping\n", candidate.decrypted);
 }
 
 // AUTO GENERATED
